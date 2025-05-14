@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
-const storage = require('./storage');
+const storage = require('./storage/index');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
