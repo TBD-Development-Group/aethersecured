@@ -3,32 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LoadPaste - Loadstring-Compatible Pastebin</title>
+    <title>LoadGen - Proper Loadstring Generator</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <header>
-        <h1>LoadPaste</h1>
-        <p>Pastebin for Roblox loadstring()</p>
+        <h1>LoadGen</h1>
+        <p>Proper loadstring generator for Roblox</p>
     </header>
 
     <main>
         <section class="paste-area">
-            <textarea id="paste-content" placeholder="Paste your Lua code here..."></textarea>
-            <div class="controls">
-                <button id="create-paste">Generate Loadstring URL</button>
+            <div class="input-group">
+                <label for="paste-content">Lua Code:</label>
+                <textarea id="paste-content" placeholder="Your script here..."></textarea>
             </div>
+            
+            <div class="input-group">
+                <label for="script-name">Script Name (optional):</label>
+                <input type="text" id="script-name" placeholder="My Awesome Script">
+            </div>
+
+            <button id="create-paste" class="generate-btn">
+                <i class="fas fa-link"></i> Generate Loadstring
+            </button>
+
             <div class="result-area hidden" id="result-area">
-                <h3>Your loadstring URL:</h3>
-                <input type="text" id="paste-url" readonly>
-                <div class="action-buttons">
-                    <button id="copy-url">Copy URL</button>
-                    <button id="test-loadstring">Test Loadstring</button>
+                <div class="input-group">
+                    <label>Your Loadstring Command:</label>
+                    <input type="text" id="loadstring-command" readonly>
                 </div>
-                <div class="loadstring-example">
-                    <p>Use in Roblox:</p>
-                    <code>loadstring(game:HttpGet("<span id="loadstring-example-url">URL</span>")()</code>
+                
+                <div class="action-buttons">
+                    <button id="copy-command" class="action-btn copy">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                    <button id="test-script" class="action-btn test">
+                        <i class="fas fa-play"></i> Test Script
+                    </button>
+                </div>
+
+                <div class="script-info">
+                    <p><strong>Script ID:</strong> <span id="script-id"></span></p>
+                    <p><strong>Created:</strong> <span id="created-at"></span></p>
                 </div>
             </div>
         </section>
@@ -36,6 +54,8 @@
 
     <div class="notification hidden" id="notification"></div>
 
+    <!-- Font Awesome for icons -->
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <script src="script.js"></script>
 </body>
 </html>
