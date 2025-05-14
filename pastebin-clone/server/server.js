@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
-const fs = require('fs');
+const { saveScript, getScript } = require('./storage');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,65 +10,57 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Simple database (in production use a real database)
-const pastes = {};
-const PASTE_DIR = path.join(__dirname, 'pastes');
+// API endpoint to create scripts
+app.post('/api/scripts', async (req, res) => {
+    try {
+        const { code, name } = req.body;
+        
+        if (!code) {
+            return res.status(400).json({ error: 'Script content is required' });
+        }
 
-// Ensure paste directory exists
-if (!fs.existsSync(PASTE_DIR)) {
-    fs.mkdirSync(PASTE_DIR);
-}
+        // Generate unique ID
+        const id = crypto.randomBytes(8).toString('hex');
+        const createdAt = new Date();
 
-// Generate a unique hash
-function generateHash() {
-    return crypto.randomBytes(8).toString('hex');
-}
+        // Save to storage
+        await saveScript(id, {
+            code,
+            name: name || 'Unnamed Script',
+            createdAt,
+            views: 0
+        });
 
-// API endpoint to create pastes
-app.post('/api/paste', (req, res) => {
-    const { code } = req.body;
-    
-    if (!code) {
-        return res.status(400).json({ error: 'No code provided' });
+        res.json({ 
+            id,
+            url: `${req.protocol}://${req.get('host')}/s/${id}`,
+            createdAt
+        });
+    } catch (error) {
+        console.error('Error creating script:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
-
-    const hash = generateHash();
-    const filePath = path.join(PASTE_DIR, `${hash}.lua`);
-
-    // Save to file system
-    fs.writeFileSync(filePath, code);
-
-    // Store in memory (in production use a database)
-    pastes[hash] = {
-        createdAt: new Date(),
-        views: 0
-    };
-
-    res.json({ hash });
 });
 
-// Endpoint to get paste by hash
-app.get('/p/:hash', (req, res) => {
-    const { hash } = req.params;
-    
-    if (!pastes[hash]) {
-        return res.status(404).send('Paste not found or expired');
+// Endpoint to get script by ID
+app.get('/s/:id', async (req, res) => {
+    try {
+        const script = await getScript(req.params.id);
+        if (!script) {
+            return res.status(404).send('Script not found');
+        }
+
+        // Update view count
+        script.views++;
+        await saveScript(req.params.id, script);
+
+        // Return raw Lua code
+        res.set('Content-Type', 'text/plain');
+        res.send(script.code);
+    } catch (error) {
+        console.error('Error fetching script:', error);
+        res.status(500).send('Internal server error');
     }
-
-    const filePath = path.join(PASTE_DIR, `${hash}.lua`);
-    
-    if (!fs.existsSync(filePath)) {
-        return res.status(404).send('Paste not found');
-    }
-
-    // Increment view count
-    pastes[hash].views += 1;
-
-    // Set content type to plain text
-    res.set('Content-Type', 'text/plain');
-    
-    // Send the raw code
-    res.send(fs.readFileSync(filePath, 'utf-8'));
 });
 
 // Serve frontend
@@ -76,7 +68,6 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
-// Start server
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
