@@ -1,1 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimplePaste - Pastebin Clone</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <h1>SimplePaste</h1>
+        <p>A minimal pastebin clone</p>
+    </header>
 
+    <main>
+        <section class="paste-area">
+            <textarea id="paste-content" placeholder="Paste your text here..."></textarea>
+            <div class="controls">
+                <div class="meta-controls">
+                    <input type="text" id="paste-title" placeholder="Title (optional)">
+                    <select id="syntax">
+                        <option value="none">Plain Text</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="python">Python</option>
+                        <option value="lua">Lua</option>
+                        <option value="html">HTML</option>
+                        <option value="css">CSS</option>
+                    </select>
+                    <input type="number" id="expiry" min="1" max="365" value="7">
+                    <label for="expiry">Days to expire</label>
+                </div>
+                <button id="create-paste">Create Paste</button>
+            </div>
+        </section>
+
+        <section class="recent-pastes hidden" id="recent-pastes">
+            <h2>Your Recent Pastes</h2>
+            <div class="paste-list" id="paste-list"></div>
+        </section>
+    </main>
+
+    <div class="notification hidden" id="notification"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
