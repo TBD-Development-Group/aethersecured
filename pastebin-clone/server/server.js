@@ -1,7 +1,8 @@
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
-const { saveScript, getScript } = require('./storage');
+const storage = require('./storage');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,55 +11,58 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
-// API endpoint to create scripts
-app.post('/api/scripts', async (req, res) => {
+// Generate a random ID
+function generateId() {
+    return crypto.randomBytes(8).toString('hex');
+}
+
+// API Endpoints
+app.post('/api/pastes', async (req, res) => {
     try {
-        const { code, name } = req.body;
+        const { code, title } = req.body;
         
         if (!code) {
-            return res.status(400).json({ error: 'Script content is required' });
+            return res.status(400).json({ error: 'Code content is required' });
         }
 
-        // Generate unique ID
-        const id = crypto.randomBytes(8).toString('hex');
-        const createdAt = new Date();
-
-        // Save to storage
-        await saveScript(id, {
-            code,
-            name: name || 'Unnamed Script',
-            createdAt,
-            views: 0
-        });
-
-        res.json({ 
+        const id = generateId();
+        const paste = {
             id,
-            url: `${req.protocol}://${req.get('host')}/s/${id}`,
-            createdAt
+            code,
+            title: title || 'Untitled Paste',
+            createdAt: new Date(),
+            views: 0
+        };
+
+        await storage.saveScript(id, paste);
+
+        res.json({
+            id,
+            url: `${req.protocol}://${req.get('host')}/p/${id}`,
+            createdAt: paste.createdAt
         });
     } catch (error) {
-        console.error('Error creating script:', error);
+        console.error('Error creating paste:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-// Endpoint to get script by ID
-app.get('/s/:id', async (req, res) => {
+app.get('/p/:id', async (req, res) => {
     try {
-        const script = await getScript(req.params.id);
-        if (!script) {
-            return res.status(404).send('Script not found');
+        const paste = await storage.getScript(req.params.id);
+        if (!paste) {
+            return res.status(404).send('Paste not found');
         }
 
         // Update view count
-        script.views++;
-        await saveScript(req.params.id, script);
+        paste.views++;
+        await storage.saveScript(paste.id, paste);
 
-        // Return raw Lua code
+        // Return raw code
         res.set('Content-Type', 'text/plain');
-        res.send(script.code);
+        res.send(paste.code);
     } catch (error) {
-        console.error('Error fetching script:', error);
+        console.error('Error fetching paste:', error);
         res.status(500).send('Internal server error');
     }
 });
