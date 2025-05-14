@@ -1,20 +1,21 @@
 document.addEventListener('DOMContentLoaded', () => {
     const pasteContent = document.getElementById('paste-content');
-    const scriptName = document.getElementById('script-name');
+    const pasteTitle = document.getElementById('paste-title');
     const createBtn = document.getElementById('create-paste');
     const resultArea = document.getElementById('result-area');
     const loadstringCommand = document.getElementById('loadstring-command');
     const copyBtn = document.getElementById('copy-command');
     const testBtn = document.getElementById('test-script');
-    const scriptIdEl = document.getElementById('script-id');
+    const pasteIdEl = document.getElementById('paste-id');
     const createdAtEl = document.getElementById('created-at');
+    const directUrlEl = document.getElementById('direct-url');
     const notification = document.getElementById('notification');
 
-    createBtn.addEventListener('click', createScript);
+    createBtn.addEventListener('click', createPaste);
     copyBtn.addEventListener('click', copyCommand);
     testBtn.addEventListener('click', testScript);
 
-    async function createScript() {
+    async function createPaste() {
         const code = pasteContent.value.trim();
         if (!code) {
             showNotification('Please enter some Lua code', 'error');
@@ -25,21 +26,21 @@ document.addEventListener('DOMContentLoaded', () => {
             createBtn.disabled = true;
             createBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
 
-            const response = await fetch('/api/scripts', {
+            const response = await fetch('/api/pastes', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     code: code,
-                    name: scriptName.value.trim()
+                    title: pasteTitle.value.trim()
                 })
             });
 
             const data = await response.json();
             
             if (!response.ok) {
-                throw new Error(data.error || 'Failed to create script');
+                throw new Error(data.error || 'Failed to create paste');
             }
 
             // Generate the proper loadstring command
@@ -47,14 +48,15 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Show results
             loadstringCommand.value = command;
-            scriptIdEl.textContent = data.id;
+            pasteIdEl.textContent = data.id;
             createdAtEl.textContent = new Date(data.createdAt).toLocaleString();
+            directUrlEl.textContent = data.url;
             resultArea.classList.remove('hidden');
             
             // Auto-copy
             copyCommand();
             
-            showNotification('Script created successfully!', 'success');
+            showNotification('Paste created successfully!', 'success');
         } catch (error) {
             showNotification(error.message, 'error');
             console.error('Error:', error);
