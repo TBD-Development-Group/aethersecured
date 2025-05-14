@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LoadGen - Proper Loadstring Generator</title>
+    <title>LoadPaste - Secure Pastebin for Roblox</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <header>
-        <h1>LoadGen</h1>
-        <p>Proper loadstring generator for Roblox</p>
+        <h1>LoadPaste</h1>
+        <p>Secure pastebin for Roblox loadstring()</p>
     </header>
 
     <main>
@@ -21,8 +22,8 @@
             </div>
             
             <div class="input-group">
-                <label for="script-name">Script Name (optional):</label>
-                <input type="text" id="script-name" placeholder="My Awesome Script">
+                <label for="paste-title">Paste Title (optional):</label>
+                <input type="text" id="paste-title" placeholder="My Awesome Script">
             </div>
 
             <button id="create-paste" class="generate-btn">
@@ -44,9 +45,10 @@
                     </button>
                 </div>
 
-                <div class="script-info">
-                    <p><strong>Script ID:</strong> <span id="script-id"></span></p>
+                <div class="paste-info">
+                    <p><strong>Paste ID:</strong> <span id="paste-id"></span></p>
                     <p><strong>Created:</strong> <span id="created-at"></span></p>
+                    <p><strong>Direct URL:</strong> <span id="direct-url"></span></p>
                 </div>
             </div>
         </section>
@@ -54,8 +56,6 @@
 
     <div class="notification hidden" id="notification"></div>
 
-    <!-- Font Awesome for icons -->
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <script src="script.js"></script>
 </body>
 </html>
