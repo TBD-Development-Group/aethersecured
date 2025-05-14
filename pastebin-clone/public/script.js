@@ -12,26 +12,43 @@ document.addEventListener('DOMContentLoaded', () => {
     copyUrlBtn.addEventListener('click', copyUrl);
     testLoadstringBtn.addEventListener('click', testLoadstring);
 
-    function createPaste() {
+    async function createPaste() {
         const content = pasteContent.value.trim();
         if (!content) {
             showNotification('Paste content cannot be empty', 'error');
             return;
         }
 
-        // Encode the content for URL
-        const encodedContent = encodeURIComponent(content);
-        
-        // Generate the loadstring URL
-        const url = `${window.location.origin}${window.location.pathname}?code=${encodedContent}`;
-        
-        // Show the result area
-        resultArea.classList.remove('hidden');
-        pasteUrl.value = url;
-        loadstringExampleUrl.textContent = url;
-        
-        // Copy to clipboard automatically
-        copyUrl();
+        try {
+            // Send to server
+            const response = await fetch('/api/paste', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ code: content })
+            });
+
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to create paste');
+            }
+
+            // Generate the loadstring URL
+            const url = `${window.location.origin}/p/${data.hash}`;
+            
+            // Show the result area
+            resultArea.classList.remove('hidden');
+            pasteUrl.value = url;
+            loadstringExampleUrl.textContent = url;
+            
+            // Copy to clipboard automatically
+            copyUrl();
+        } catch (error) {
+            showNotification(error.message, 'error');
+            console.error('Error:', error);
+        }
     }
 
     function copyUrl() {
@@ -69,24 +86,5 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             notification.classList.remove('visible');
         }, 3000);
-    }
-
-    // Check if there's code in the URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const codeParam = urlParams.get('code');
-    
-    if (codeParam) {
-        // This is a loadstring request - return the raw code
-        const decodedCode = decodeURIComponent(codeParam);
-        
-        // Set content-type to plain text
-        document.contentType = 'text/plain';
-        
-        // Write just the code to the document
-        document.write(decodedCode);
-        document.close();
-        
-        // Prevent the rest of the page from loading
-        throw new Error('Stop page execution');
     }
 });
