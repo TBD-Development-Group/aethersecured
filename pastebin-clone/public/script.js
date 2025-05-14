@@ -1,68 +1,81 @@
 document.addEventListener('DOMContentLoaded', () => {
     const pasteContent = document.getElementById('paste-content');
-    const createPasteBtn = document.getElementById('create-paste');
+    const scriptName = document.getElementById('script-name');
+    const createBtn = document.getElementById('create-paste');
     const resultArea = document.getElementById('result-area');
-    const pasteUrl = document.getElementById('paste-url');
-    const copyUrlBtn = document.getElementById('copy-url');
-    const testLoadstringBtn = document.getElementById('test-loadstring');
-    const loadstringExampleUrl = document.getElementById('loadstring-example-url');
+    const loadstringCommand = document.getElementById('loadstring-command');
+    const copyBtn = document.getElementById('copy-command');
+    const testBtn = document.getElementById('test-script');
+    const scriptIdEl = document.getElementById('script-id');
+    const createdAtEl = document.getElementById('created-at');
     const notification = document.getElementById('notification');
 
-    createPasteBtn.addEventListener('click', createPaste);
-    copyUrlBtn.addEventListener('click', copyUrl);
-    testLoadstringBtn.addEventListener('click', testLoadstring);
+    createBtn.addEventListener('click', createScript);
+    copyBtn.addEventListener('click', copyCommand);
+    testBtn.addEventListener('click', testScript);
 
-    async function createPaste() {
-        const content = pasteContent.value.trim();
-        if (!content) {
-            showNotification('Paste content cannot be empty', 'error');
+    async function createScript() {
+        const code = pasteContent.value.trim();
+        if (!code) {
+            showNotification('Please enter some Lua code', 'error');
             return;
         }
 
         try {
-            // Send to server
-            const response = await fetch('/api/paste', {
+            createBtn.disabled = true;
+            createBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+
+            const response = await fetch('/api/scripts', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ code: content })
+                body: JSON.stringify({
+                    code: code,
+                    name: scriptName.value.trim()
+                })
             });
 
             const data = await response.json();
             
             if (!response.ok) {
-                throw new Error(data.error || 'Failed to create paste');
+                throw new Error(data.error || 'Failed to create script');
             }
 
-            // Generate the loadstring URL
-            const url = `${window.location.origin}/p/${data.hash}`;
+            // Generate the proper loadstring command
+            const command = `loadstring(game:HttpGet("${data.url}", true))()`;
             
-            // Show the result area
+            // Show results
+            loadstringCommand.value = command;
+            scriptIdEl.textContent = data.id;
+            createdAtEl.textContent = new Date(data.createdAt).toLocaleString();
             resultArea.classList.remove('hidden');
-            pasteUrl.value = url;
-            loadstringExampleUrl.textContent = url;
             
-            // Copy to clipboard automatically
-            copyUrl();
+            // Auto-copy
+            copyCommand();
+            
+            showNotification('Script created successfully!', 'success');
         } catch (error) {
             showNotification(error.message, 'error');
             console.error('Error:', error);
+        } finally {
+            createBtn.disabled = false;
+            createBtn.innerHTML = '<i class="fas fa-link"></i> Generate Loadstring';
         }
     }
 
-    function copyUrl() {
-        navigator.clipboard.writeText(pasteUrl.value)
+    function copyCommand() {
+        navigator.clipboard.writeText(loadstringCommand.value)
             .then(() => {
-                showNotification('URL copied to clipboard!', 'success');
+                showNotification('Copied to clipboard!', 'success');
             })
             .catch(err => {
-                showNotification('Failed to copy URL', 'error');
-                console.error('Could not copy text: ', err);
+                showNotification('Failed to copy', 'error');
+                console.error('Copy failed:', err);
             });
     }
 
-    function testLoadstring() {
+    function testScript() {
         const code = pasteContent.value.trim();
         if (!code) {
             showNotification('No code to test', 'error');
@@ -70,12 +83,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            // This is just a simulation - in a real environment this would execute in Roblox
+            // This is just a simulation
             const testFunc = new Function(code);
             testFunc();
-            showNotification('Loadstring test executed successfully (simulated)', 'success');
+            showNotification('Script test executed (simulated)', 'success');
         } catch (e) {
-            showNotification(`Loadstring error: ${e.message}`, 'error');
+            showNotification(`Script error: ${e.message}`, 'error');
         }
     }
 
