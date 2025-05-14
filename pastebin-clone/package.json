@@ -1,15 +1,14 @@
 {
-  "name": "pastebin-clone",
+  "name": "loadstring-pastebin",
   "version": "1.0.0",
-  "description": "A simple pastebin clone",
+  "description": "A loadstring-compatible pastebin for Roblox",
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
     "dev": "nodemon server/server.js"
   },
   "dependencies": {
-    "express": "^4.17.1",
-    "uuid": "^8.3.2"
+    "express": "^4.17.1"
   },
   "devDependencies": {
     "nodemon": "^2.0.7"
