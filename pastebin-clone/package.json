@@ -1,7 +1,7 @@
 {
-  "name": "hash-pastebin",
+  "name": "loadstring-gen",
   "version": "1.0.0",
-  "description": "A secure pastebin with hash-based URLs for loadstring",
+  "description": "Proper loadstring generator for Roblox",
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
