@@ -1,23 +1,29 @@
 const fs = require('fs');
 const path = require('path');
+const { promisify } = require('util');
 
-const SCRIPTS_DIR = path.join(__dirname, 'scripts');
+const writeFile = promisify(fs.writeFile);
+const readFile = promisify(fs.readFile);
+const unlink = promisify(fs.unlink);
 
-// Ensure scripts directory exists
-if (!fs.existsSync(SCRIPTS_DIR)) {
-    fs.mkdirSync(SCRIPTS_DIR, { recursive: true });
+// Use absolute path for Render
+const STORAGE_PATH = path.join(__dirname, '../storage');
+
+// Ensure storage directory exists
+if (!fs.existsSync(STORAGE_PATH)) {
+    fs.mkdirSync(STORAGE_PATH, { recursive: true });
 }
 
 async function saveScript(id, data) {
-    const filePath = path.join(SCRIPTS_DIR, `${id}.json`);
-    await fs.promises.writeFile(filePath, JSON.stringify(data));
+    const filePath = path.join(STORAGE_PATH, `${id}.json`);
+    await writeFile(filePath, JSON.stringify(data));
     return data;
 }
 
 async function getScript(id) {
-    const filePath = path.join(SCRIPTS_DIR, `${id}.json`);
+    const filePath = path.join(STORAGE_PATH, `${id}.json`);
     try {
-        const data = await fs.promises.readFile(filePath, 'utf8');
+        const data = await readFile(filePath, 'utf8');
         return JSON.parse(data);
     } catch (error) {
         if (error.code === 'ENOENT') return null;
@@ -25,4 +31,7 @@ async function getScript(id) {
     }
 }
 
-module.exports = { saveScript, getScript };
+module.exports = {
+    saveScript,
+    getScript
+};
