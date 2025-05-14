@@ -1,14 +1,15 @@
 {
-  "name": "loadstring-pastebin",
+  "name": "hash-pastebin",
   "version": "1.0.0",
-  "description": "A loadstring-compatible pastebin for Roblox",
+  "description": "A secure pastebin with hash-based URLs for loadstring",
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
     "dev": "nodemon server/server.js"
   },
   "dependencies": {
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "crypto": "^1.0.1"
   },
   "devDependencies": {
     "nodemon": "^2.0.7"
