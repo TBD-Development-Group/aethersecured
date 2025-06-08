@@ -1,54 +1,37 @@
-// server/storage.js
-const fs = require('fs').promises;
-const path = require('path');
+const storage = require('./storage');
 
-const STORAGE_PATH = path.resolve(__dirname, '../storage');
-
-// Ensure storage directory exists on load
-async function ensureStorageDir() {
-  try {
-    await fs.mkdir(STORAGE_PATH, { recursive: true });
-  } catch (err) {
-    // Handle error if needed
-    console.error('Failed to create storage directory:', err);
+app.post('/api/pastes', async (req, res) => {
+  const { code, title } = req.body;
+  if (!code) {
+    return res.status(400).json({ error: 'Code content is required' });
   }
-}
-ensureStorageDir();
 
-async function saveScript(id, data) {
-  const filePath = path.join(STORAGE_PATH, `${id}.json`);
-  await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
-  return data;
-}
+  const id = generateId();
+  const paste = {
+    id,
+    code,
+    title: title || 'Untitled Paste',
+    createdAt: new Date().toISOString(),
+    views: 0,
+  };
 
-async function getScript(id) {
-  const filePath = path.join(STORAGE_PATH, `${id}.json`);
-  try {
-    const raw = await fs.readFile(filePath, 'utf-8');
-    return JSON.parse(raw);
-  } catch (err) {
-    if (err.code === 'ENOENT') {
-      return null; // Not found
-    }
-    throw err; // Unexpected error
+  await storage.saveScript(id, paste);
+
+  res.json({
+    id,
+    url: `${req.protocol}://${req.get('host')}/p/${id}`,
+    createdAt: paste.createdAt,
+  });
+});
+
+app.get('/p/:id', async (req, res) => {
+  const paste = await storage.getScript(req.params.id);
+  if (!paste) {
+    return res.status(404).send('Paste not found');
   }
-}
 
-async function deleteScript(id) {
-  const filePath = path.join(STORAGE_PATH, `${id}.json`);
-  try {
-    await fs.unlink(filePath);
-    return true;
-  } catch (err) {
-    if (err.code === 'ENOENT') {
-      return false; // File didn't exist
-    }
-    throw err;
-  }
-}
+  paste.views++;
+  await storage.saveScript(paste.id, paste);
 
-module.exports = {
-  saveScript,
-  getScript,
-  deleteScript,
-};
+  res.type('text/plain').send(paste.code);
+});
