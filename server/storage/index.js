@@ -1,48 +1,38 @@
-const fs = require('fs');
+const fs = require('fs').promises;
 const path = require('path');
-const { promisify } = require('util');
 
-const writeFile = promisify(fs.writeFile);
-const readFile = promisify(fs.readFile);
-const unlink = promisify(fs.unlink);
+// Data folder inside storage to hold the actual json files
+const DATA_PATH = path.join(__dirname, 'data');
 
-const STORAGE_PATH = path.join(__dirname, '../../storage');
-
-// Ensure storage directory exists
-if (!fs.existsSync(STORAGE_PATH)) {
-    fs.mkdirSync(STORAGE_PATH, { recursive: true });
+// Ensure the data directory exists
+async function ensureDataPath() {
+  try {
+    await fs.mkdir(DATA_PATH, { recursive: true });
+  } catch (err) {
+    // Ignore if already exists
+  }
 }
 
 async function saveScript(id, data) {
-    const filePath = path.join(STORAGE_PATH, `${id}.json`);
-    await writeFile(filePath, JSON.stringify(data));
-    return data;
+  await ensureDataPath();
+  const filePath = path.join(DATA_PATH, `${id}.json`);
+  await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
+  return data;
 }
 
 async function getScript(id) {
-    const filePath = path.join(STORAGE_PATH, `${id}.json`);
-    try {
-        const data = await readFile(filePath, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        if (error.code === 'ENOENT') return null;
-        throw error;
-    }
-}
-
-async function deleteScript(id) {
-    const filePath = path.join(STORAGE_PATH, `${id}.json`);
-    try {
-        await unlink(filePath);
-        return true;
-    } catch (error) {
-        if (error.code === 'ENOENT') return false;
-        throw error;
-    }
+  await ensureDataPath();
+  const filePath = path.join(DATA_PATH, `${id}.json`);
+  try {
+    const data = await fs.readFile(filePath, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    if (error.code === 'ENOENT') return null;
+    throw error;
+  }
 }
 
 module.exports = {
-    saveScript,
-    getScript,
-    deleteScript
+  saveScript,
+  getScript,
 };
