@@ -1,44 +1,54 @@
-const fs = require('fs');
+// server/storage.js
+const fs = require('fs').promises;
 const path = require('path');
-const { promisify } = require('util');
 
-const writeFile = promisify(fs.writeFile);
-const readFile = promisify(fs.readFile);
-const mkdir = promisify(fs.mkdir);
-const access = promisify(fs.access);
+const STORAGE_PATH = path.resolve(__dirname, '../storage');
 
-const STORAGE_PATH = path.join(__dirname, '../storage');
-
+// Ensure storage directory exists on load
 async function ensureStorageDir() {
   try {
-    await access(STORAGE_PATH, fs.constants.F_OK);
-    // Directory exists
-  } catch {
-    // Directory does not exist, create it
-    await mkdir(STORAGE_PATH, { recursive: true });
+    await fs.mkdir(STORAGE_PATH, { recursive: true });
+  } catch (err) {
+    // Handle error if needed
+    console.error('Failed to create storage directory:', err);
   }
 }
+ensureStorageDir();
 
 async function saveScript(id, data) {
-  await ensureStorageDir();
   const filePath = path.join(STORAGE_PATH, `${id}.json`);
-  await writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
+  await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
   return data;
 }
 
 async function getScript(id) {
-  await ensureStorageDir();
   const filePath = path.join(STORAGE_PATH, `${id}.json`);
   try {
-    const data = await readFile(filePath, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    if (error.code === 'ENOENT') return null;
-    throw error;
+    const raw = await fs.readFile(filePath, 'utf-8');
+    return JSON.parse(raw);
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      return null; // Not found
+    }
+    throw err; // Unexpected error
+  }
+}
+
+async function deleteScript(id) {
+  const filePath = path.join(STORAGE_PATH, `${id}.json`);
+  try {
+    await fs.unlink(filePath);
+    return true;
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      return false; // File didn't exist
+    }
+    throw err;
   }
 }
 
 module.exports = {
   saveScript,
   getScript,
+  deleteScript,
 };
