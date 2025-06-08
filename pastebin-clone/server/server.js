@@ -1,82 +1,54 @@
-const storage = require('./storage');
-require('dotenv').config();
-const express = require('express');
+// server/storage.js
+const fs = require('fs').promises;
 const path = require('path');
-const crypto = require('crypto');
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+const STORAGE_PATH = path.resolve(__dirname, '../storage');
 
-// Middleware
-app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
+// Ensure storage directory exists on load
+async function ensureStorageDir() {
+  try {
+    await fs.mkdir(STORAGE_PATH, { recursive: true });
+  } catch (err) {
+    // Handle error if needed
+    console.error('Failed to create storage directory:', err);
+  }
+}
+ensureStorageDir();
 
-// Generate random ID
-function generateId() {
-    return crypto.randomBytes(8).toString('hex');
+async function saveScript(id, data) {
+  const filePath = path.join(STORAGE_PATH, `${id}.json`);
+  await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
+  return data;
 }
 
-// API Endpoints
-app.post('/api/pastes', async (req, res) => {
-    try {
-        const { code, title } = req.body;
-        
-        if (!code) {
-            return res.status(400).json({ error: 'Code content is required' });
-        }
-
-        const id = generateId();
-        const paste = {
-            id,
-            code,
-            title: title || 'Untitled Paste',
-            createdAt: new Date(),
-            views: 0
-        };
-
-        await storage.saveScript(id, paste);
-
-        res.json({
-            id,
-            url: `${req.protocol}://${req.get('host')}/p/${id}`,
-            createdAt: paste.createdAt
-        });
-    } catch (error) {
-        console.error('Error creating paste:', error);
-        res.status(500).json({ error: 'Internal server error' });
+async function getScript(id) {
+  const filePath = path.join(STORAGE_PATH, `${id}.json`);
+  try {
+    const raw = await fs.readFile(filePath, 'utf-8');
+    return JSON.parse(raw);
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      return null; // Not found
     }
-});
+    throw err; // Unexpected error
+  }
+}
 
-app.get('/p/:id', async (req, res) => {
-    try {
-        const paste = await storage.getScript(req.params.id);
-        if (!paste) {
-            return res.status(404).send('Paste not found');
-        }
-
-        // Update view count
-        paste.views++;
-        await storage.saveScript(paste.id, paste);
-
-        // Return raw code
-        res.set('Content-Type', 'text/plain');
-        res.send(paste.code);
-    } catch (error) {
-        console.error('Error fetching paste:', error);
-        res.status(500).send('Internal server error');
+async function deleteScript(id) {
+  const filePath = path.join(STORAGE_PATH, `${id}.json`);
+  try {
+    await fs.unlink(filePath);
+    return true;
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      return false; // File didn't exist
     }
-});
+    throw err;
+  }
+}
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-    res.status(200).send('OK');
-});
-
-// Serve frontend
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/index.html'));
-});
-
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+module.exports = {
+  saveScript,
+  getScript,
+  deleteScript,
+};
