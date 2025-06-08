@@ -1,8 +1,8 @@
+const storage = require('./storage');
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
-const storage = require('./storage');  // Now correctly points to storage.js
 
 const app = express();
 const PORT = process.env.PORT || 3000;
